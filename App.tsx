@@ -1,4 +1,4 @@
-import { StatusBar, Text } from 'react-native';
+import { StatusBar } from 'react-native';
 import {
   useFonts,
   Ubuntu_400Regular,
@@ -7,6 +7,7 @@ import {
 import { NativeBaseProvider } from 'native-base';
 import { Loading } from '@components/Loading';
 import { theme } from './src/theme';
+import { SignIn } from '@screens/Signin';
 
 export default function App() {
   const [fontsLoaded] = useFonts({ Ubuntu_400Regular, Ubuntu_700Bold });
@@ -18,7 +19,7 @@ export default function App() {
         backgroundColor="transparent"
         translucent
       />
-      {fontsLoaded ? <Text>Olá Mundo !</Text> : <Loading />}
+      {fontsLoaded ? <SignIn /> : <Loading />}
     </NativeBaseProvider>
   );
 }
