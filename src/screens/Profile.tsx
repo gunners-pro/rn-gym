@@ -5,9 +5,12 @@ import {
   Skeleton,
   Text,
   Heading,
+  useToast,
 } from 'native-base';
 import { useState } from 'react';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, LogBox } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 import { ScreenHeader } from '@components/ScreenHeader';
 import { UserPhoto } from '@components/UserPhoto';
@@ -15,9 +18,47 @@ import { Input } from '@components/Input';
 import { Button } from '@components/Button';
 
 const PHOTO_SIZE = 33;
+LogBox.ignoreLogs([
+  // eslint-disable-next-line prettier/prettier
+  'Key "cancelled" in the image picker result is deprecated and will be removed in SDK 48, use "canceled" instead',
+]);
 
 export function Profile() {
   const [photoIsLoading, setPhotoIsLoading] = useState(false);
+  const [userPhoto, setUserPhoto] = useState(
+    'https://github.com/gunners-pro.png',
+  );
+  const toast = useToast();
+
+  async function handleUserPhotoSelect() {
+    setPhotoIsLoading(true);
+    try {
+      const photoSelected = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+        aspect: [4, 4],
+        allowsEditing: true,
+      });
+      if (!photoSelected.canceled) {
+        const uri = photoSelected.assets[0].uri;
+        const { size } = await FileSystem.getInfoAsync(uri);
+
+        if (size && size / 1024 / 1024 > 5) {
+          return toast.show({
+            title: 'Essa imagem é muito grande. Máximo 5MB.',
+            placement: 'top',
+            bgColor: 'red.500',
+          });
+        }
+
+        setUserPhoto(uri);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setPhotoIsLoading(false);
+    }
+  }
 
   return (
     <VStack flex={1}>
@@ -34,12 +75,12 @@ export function Profile() {
             />
           ) : (
             <UserPhoto
-              source={{ uri: 'https://github.com/gunners-pro.png' }}
+              source={{ uri: userPhoto }}
               alt="Foto do usuário"
               size={PHOTO_SIZE}
             />
           )}
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleUserPhotoSelect}>
             <Text
               color="green.500"
               fontWeight="bold"
