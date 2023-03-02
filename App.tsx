@@ -8,6 +8,7 @@ import { NativeBaseProvider } from 'native-base';
 import { Loading } from '@components/Loading';
 import { theme } from './src/theme';
 import { Routes } from '@routes/index';
+import { AuthProvider } from '@contexts/AuthContext';
 
 export default function App() {
   const [fontsLoaded] = useFonts({ Ubuntu_400Regular, Ubuntu_700Bold });
@@ -19,7 +20,7 @@ export default function App() {
         backgroundColor="transparent"
         translucent
       />
-      {fontsLoaded ? <Routes /> : <Loading />}
+      <AuthProvider>{fontsLoaded ? <Routes /> : <Loading />}</AuthProvider>
     </NativeBaseProvider>
   );
 }
