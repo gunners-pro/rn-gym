@@ -1,5 +1,9 @@
 import { VStack, Text, Image, Center, Heading, ScrollView } from 'native-base';
 import { useNavigation } from '@react-navigation/native';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useAuth } from '@hooks/useAuth';
+import { useForm, Controller } from 'react-hook-form';
 
 import LogoSvg from '@assets/logo.svg';
 import BackgroundImg from '@assets/background.png';
@@ -7,11 +11,34 @@ import { Input } from '@components/Input';
 import { Button } from '@components/Button';
 import { AuthNavigatorRoutesProps } from '@routes/auth.routes';
 
+type FormData = {
+  email: string;
+  password: string;
+};
+
+const signInSchema = yup.object({
+  email: yup.string().required('Informe o e-mail').email('E-mail inválido'),
+  password: yup
+    .string()
+    .required('Informe a senha')
+    .min(6, 'A senha deve conter 6 caracteres ou mais'),
+});
+
 export function SignIn() {
+  const { signIn } = useAuth();
   const navigation = useNavigation<AuthNavigatorRoutesProps>();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({ resolver: yupResolver(signInSchema) });
 
   function handleNewAccount() {
     navigation.navigate('signUp');
+  }
+
+  async function handleSignIn({ email, password }: FormData) {
+    await signIn(email, password);
   }
 
   return (
@@ -38,13 +65,37 @@ export function SignIn() {
           <Heading color="gray.100" fontSize="xl" mb={6} fontFamily="heading">
             Acesse sua conta
           </Heading>
-          <Input
-            placeholder="E-mail"
-            keyboardType="email-address"
-            autoCapitalize="none"
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                placeholder="E-mail"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onChangeText={onChange}
+                value={value}
+                onBlur={onBlur}
+                errorMessage={errors.email?.message}
+              />
+            )}
           />
-          <Input placeholder="Senha" secureTextEntry />
-          <Button title="Acessar" />
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input
+                placeholder="Senha"
+                secureTextEntry
+                onChangeText={onChange}
+                value={value}
+                onBlur={onBlur}
+                errorMessage={errors.password?.message}
+              />
+            )}
+          />
+
+          <Button title="Acessar" onPress={handleSubmit(handleSignIn)} />
         </Center>
 
         <Center mt={24}>

@@ -22,6 +22,7 @@
     "prettier"
   ],
   "rules": {
+    "no-useless-catch": "off",
     "prettier/prettier": "error",
     "indent": [
       "error",
