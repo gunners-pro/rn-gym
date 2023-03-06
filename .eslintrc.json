@@ -19,9 +19,39 @@
     "@typescript-eslint",
     "import",
     "react-hooks",
-    "prettier"
+    "prettier",
+    "eslint-plugin-import-helpers"
   ],
   "rules": {
+    "import-helpers/order-imports": [
+      "warn",
+      {
+        "newlinesBetween": "always",
+        "groups": [
+          "module",
+          "/^@expo/",
+          "/^@assets/",
+          "/^@components/",
+          "/^@contexts/",
+          "/^@dtos/",
+          "/^@hooks/",
+          "/^@routes/",
+          "/^@screens/",
+          "/^@services/",
+          "/^@storage/",
+          "/^@utils/",
+          [
+            "parent",
+            "sibling",
+            "index"
+          ]
+        ],
+        "alphabetize": {
+          "order": "asc",
+          "ignoreCase": true
+        }
+      }
+    ],
     "no-useless-catch": "off",
     "prettier/prettier": "error",
     "indent": [
