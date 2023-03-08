@@ -1,10 +1,20 @@
-import { createContext, ReactNode, useEffect, useState } from 'react';
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
 import { UserDTO } from '@dtos/UserDTO';
 
 import { api } from '@services/api';
 
-import { storageAuthTokenSave } from '@storage/storageAuthToken';
+import {
+  storageAuthTokenGet,
+  storageAuthTokenRemove,
+  storageAuthTokenSave,
+} from '@storage/storageAuthToken';
 import {
   storageUserGet,
   storageUserRemove,
@@ -31,31 +41,28 @@ export function AuthProvider({ children }: Props) {
   const [isLoadingUserStorageData, setIsLoadingUserStorageData] =
     useState(true);
 
-  async function storageUserAndToken(userData: UserDTO, token: string) {
-    try {
-      setIsLoadingUserStorageData(true);
+  async function userAndTokenUpdate(userData: UserDTO, token: string) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
-      await storageUserSave(userData);
-      await storageAuthTokenSave(token);
-      setUser(userData);
-    } catch (error) {
-      throw error;
-    } finally {
-      setIsLoadingUserStorageData(false);
-    }
+    setUser(userData);
   }
 
   async function signIn(email: string, password: string) {
     try {
       const { data } = await api.post('/sessions', { email, password });
 
-      if (data.user) {
-        storageUserAndToken(data.user, data.token);
+      if (data.user && data.token) {
+        setIsLoadingUserStorageData(true);
+
+        await storageUserSave(data.user);
+        await storageAuthTokenSave(data.token);
+
+        userAndTokenUpdate(data.user, data.token);
       }
     } catch (error) {
       throw error;
+    } finally {
+      setIsLoadingUserStorageData(false);
     }
   }
 
@@ -64,6 +71,7 @@ export function AuthProvider({ children }: Props) {
       setIsLoadingUserStorageData(true);
       setUser({} as UserDTO);
       await storageUserRemove();
+      await storageAuthTokenRemove();
     } catch (error) {
       throw error;
     } finally {
@@ -71,23 +79,26 @@ export function AuthProvider({ children }: Props) {
     }
   }
 
-  async function loadUserData() {
+  const loadUserData = useCallback(async () => {
     try {
-      const userLogged = await storageUserGet();
+      setIsLoadingUserStorageData(true);
 
-      if (userLogged) {
-        setUser(userLogged);
+      const userLogged = await storageUserGet();
+      const token = await storageAuthTokenGet();
+
+      if (token && userLogged) {
+        userAndTokenUpdate(userLogged, token);
       }
     } catch (error) {
       throw error;
     } finally {
       setIsLoadingUserStorageData(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     loadUserData();
-  }, []);
+  }, [loadUserData]);
 
   return (
     <AuthContext.Provider
