@@ -16,15 +16,15 @@ import { api } from '@services/api';
 import { AppError } from '@utils/AppError';
 
 export function Home() {
-  const [groupMusclesSelected, setGroupMusclesSelected] = useState('Ombro');
+  const [groupMusclesSelected, setGroupMusclesSelected] = useState('antebraço');
   const [isLoading, setIsLoading] = useState(true);
   const navigation = useNavigation<AppNavigatorRoutesProps>();
   const toast = useToast();
   const [groups, setGroups] = useState<Array<string>>([]);
   const [exercises, setExercises] = useState<ExerciseDTO[]>([]);
 
-  function handleOpenExerciseDetails() {
-    navigation.navigate('exercise');
+  function handleOpenExerciseDetails(id: string) {
+    navigation.navigate('exercise', { id });
   }
 
   const fetchGroups = useCallback(async () => {
@@ -121,7 +121,10 @@ export function Home() {
             data={exercises}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
-              <ExerciseCard onPress={handleOpenExerciseDetails} data={item} />
+              <ExerciseCard
+                onPress={() => handleOpenExerciseDetails(item.id)}
+                data={item}
+              />
             )}
             showsVerticalScrollIndicator={false}
             _contentContainerStyle={{ paddingBottom: 20 }}
