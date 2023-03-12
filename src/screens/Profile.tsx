@@ -1,3 +1,4 @@
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -12,6 +13,7 @@ import {
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { TouchableOpacity, LogBox } from 'react-native';
+import * as yup from 'yup';
 
 import { Button } from '@components/Button';
 import { Input } from '@components/Input';
@@ -34,6 +36,28 @@ type FormDataProps = {
   confirm_password: string;
 };
 
+const profileSchema = yup.object({
+  name: yup.string().required('Informe o nome'),
+  password: yup
+    .string()
+    .min(6, 'A senha deve ter no minimo 6 digitos')
+    .nullable()
+    .transform(value => (value ? value : null)),
+  confirm_password: yup
+    .string()
+    .nullable()
+    .transform(value => (value ? value : null))
+    .oneOf([yup.ref('password')], 'A confirmação de senha não confere')
+    .when('password', {
+      is: (field: string) => !!field,
+      then: schema =>
+        schema
+          .nullable()
+          .required('Informe a confirmação da senha')
+          .transform(value => (value ? value : null)),
+    }),
+});
+
 export function Profile() {
   const { user } = useAuth();
   const [photoIsLoading, setPhotoIsLoading] = useState(false);
@@ -41,11 +65,16 @@ export function Profile() {
     'https://github.com/gunners-pro.png',
   );
   const toast = useToast();
-  const { control } = useForm<FormDataProps>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormDataProps>({
     defaultValues: {
       name: user.name,
       email: user.email,
     },
+    resolver: yupResolver(profileSchema),
   });
 
   async function handleUserPhotoSelect() {
@@ -76,6 +105,10 @@ export function Profile() {
     } finally {
       setPhotoIsLoading(false);
     }
+  }
+
+  async function handleProfileUpdate(data: FormDataProps) {
+    console.log(data);
   }
 
   return (
@@ -120,6 +153,7 @@ export function Profile() {
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
+                errorMessage={errors.name?.message}
               />
             )}
           />
@@ -143,14 +177,52 @@ export function Profile() {
           <Heading color="gray.200" fontSize="md" mb={2}>
             Alterar senha
           </Heading>
-          <Input bg="gray.600" placeholder="Senha antiga" secureTextEntry />
-          <Input bg="gray.600" placeholder="Senha nova" secureTextEntry />
-          <Input
-            bg="gray.600"
-            placeholder="Confirme a nova senha"
-            secureTextEntry
+          <Controller
+            control={control}
+            name="old_password"
+            render={({ field: { onChange } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="Senha antiga"
+                secureTextEntry
+                onChangeText={onChange}
+              />
+            )}
           />
-          <Button title="Atualizar" mt={4} />
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="Senha nova"
+                secureTextEntry
+                onChangeText={onChange}
+                errorMessage={errors.password?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="confirm_password"
+            render={({ field: { onChange } }) => (
+              <Input
+                bg="gray.600"
+                placeholder="Confirme a nova senha"
+                secureTextEntry
+                onChangeText={onChange}
+                errorMessage={errors.confirm_password?.message}
+              />
+            )}
+          />
+
+          <Button
+            title="Atualizar"
+            mt={4}
+            onPress={handleSubmit(handleProfileUpdate)}
+          />
         </VStack>
       </ScrollView>
     </VStack>
